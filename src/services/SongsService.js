@@ -26,8 +26,27 @@ class SongsService {
     return result.rows[0].id;
   }
 
-  async getSongs() {
-    const result = await this._pool.query('SELECT id, title, performer FROM songs');
+  async getSongs({ title, performer }) {
+    let query = 'SELECT id, title, performer FROM songs';
+    const values = [];
+
+    const conditions = [];
+
+    if (title) {
+      values.push(`%${title}%`);
+      conditions.push(`LOWER(title) LIKE LOWER($${values.length})`);
+    }
+
+    if (performer) {
+      values.push(`%${performer}%`);
+      conditions.push(`LOWER(performer) LIKE LOWER($${values.length})`);
+    }
+
+    if (conditions.length > 0) {
+      query += ` WHERE ${conditions.join(' AND ')}`;
+    }
+
+    const result = await this._pool.query(query, values);
     return result.rows.map(mapDBToSongsModel);
   }
 
@@ -46,11 +65,11 @@ class SongsService {
     return result.rows.map(mapDBToSongModel)[0];
   }
 
-  async editSongById(id, { title, year, performer, genre, duration }) {
+  async editSongById(id, { title, year, performer, genre, duration, albumId }) {
     const updatedAt = new Date().toISOString();
     const query = {
-      text: 'UPDATE songs SET title = $1, year = $2, performer = $3, genre = $4, duration = $5, updated_at = $6 WHERE id = $7 RETURNING id',
-      values: [title, year, performer, genre, duration, updatedAt, id],
+      text: 'UPDATE songs SET title = $1, year = $2, performer = $3, genre = $4, duration = $5, album_id = $6, updated_at = $7 WHERE id = $8 RETURNING id',
+      values: [title, year, performer, genre, duration, albumId, updatedAt, id],
     };
 
     const result = await this._pool.query(query);
