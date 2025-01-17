@@ -42,35 +42,36 @@ const init = async () => {
   ]);
 
   server.ext('onPreResponse', (request, h) => {
-    const { response } = request
+    const { response } = request;
 
     if (response instanceof Error) {
       if (response instanceof ClientError) {
         const newResponse = h.response({
           status: 'fail',
-          message: response.message
-        })
+          message: response.message,
+        });
 
-        newResponse.code(response.statusCode)
+        newResponse.code(response.statusCode);
 
-        return newResponse
+        return newResponse;
       }
 
       if (!response.isServer) {
-        return h.continue
+        return h.continue;
       }
 
       const newResponse = h.response({
         status: 'fail',
-        message: 'The server has encountered a situation it does not know how to handle.'
-      })
+        message:
+          'The server has encountered a situation it does not know how to handle.',
+      });
 
-      newResponse.code(500)
-      return newResponse
+      newResponse.code(500);
+      return newResponse;
     }
 
-    return h.continue
-  })
+    return h.continue;
+  });
 
   await server.start();
   console.log(`Server berjalan pada ${server.info.uri}`);
