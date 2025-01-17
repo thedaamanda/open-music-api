@@ -1,3 +1,9 @@
+/**
+ * Defines all song-related routes for the API.
+ *
+ * @param {Object} handler - An instance of SongsHandler containing all the route handlers
+ * @returns {Array<Object>} Array of route configuration objects
+ */
 const songRoutes = (handler) => [
   {
     method: 'POST',

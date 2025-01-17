@@ -1,6 +1,16 @@
 const autoBind = require('auto-bind');
 
+/**
+ * Handler class to manage HTTP requests related to albums.
+ * Uses auto-bind to maintain proper 'this' context in methods.
+ */
 class AlbumsHandler {
+  /**
+   * Initializes a new instance of AlbumsHandler.
+   *
+   * @param {Object} service - The album service instance for handling business logic
+   * @param {Object} validator - The validator instance for request payload validation
+   */
   constructor(service, validator) {
     this._service = service;
     this._validator = validator;
@@ -8,6 +18,22 @@ class AlbumsHandler {
     autoBind(this);
   }
 
+  /**
+   * Handles POST request to create a new album.
+   *
+   * @param {Object} request - The Hapi request object
+   * @param {Object} request.payload - Request payload containing album data
+   * @param {string} request.payload.name - The name of the album
+   * @param {number} request.payload.year - The release year of the album
+   * @param {Object} h - The Hapi response toolkit
+   *
+   * @throws {ValidationError} When the request payload fails validation
+   * @returns {Object} Response object with:
+   *                   - status: 'success'
+   *                   - message: Success message
+   *                   - data: Object containing the new albumId
+   *                   - HTTP status code 201
+   */
   async postAlbumHandler(request, h) {
     this._validator.validateAlbumPayload(request.payload);
     const { name, year } = request.payload;
@@ -25,6 +51,13 @@ class AlbumsHandler {
     return response;
   }
 
+  /**
+   * Handles GET request to retrieve all albums.
+   *
+   * @returns {Object} Response object with:
+   *                   - status: 'success'
+   *                   - data: Object containing array of albums
+   */
   async getAlbumsHandler() {
     const albums = await this._service.getAlbums();
     return {
@@ -35,6 +68,18 @@ class AlbumsHandler {
     };
   }
 
+  /**
+   * Handles GET request to retrieve a specific album by ID.
+   *
+   * @param {Object} request - The Hapi request object
+   * @param {Object} request.params - Request parameters
+   * @param {string} request.params.id - The ID of the album to retrieve
+   *
+   * @throws {NotFoundError} When the specified album is not found
+   * @returns {Object} Response object with:
+   *                   - status: 'success'
+   *                   - data: Object containing the requested album
+   */
   async getAlbumByIdHandler(request) {
     const { id } = request.params;
     const album = await this._service.getAlbumById(id);
@@ -46,6 +91,22 @@ class AlbumsHandler {
     };
   }
 
+  /**
+   * Handles PUT request to update an existing album.
+   *
+   * @param {Object} request - The Hapi request object
+   * @param {Object} request.params - Request parameters
+   * @param {string} request.params.id - The ID of the album to update
+   * @param {Object} request.payload - The updated album data
+   * @param {string} request.payload.name - The new name of the album
+   * @param {number} request.payload.year - The new release year
+   *
+   * @throws {ValidationError} When the request payload fails validation
+   * @throws {NotFoundError} When the specified album is not found
+   * @returns {Object} Response object with:
+   *                   - status: 'success'
+   *                   - message: Success message
+   */
   async putAlbumByIdHandler(request) {
     this._validator.validateAlbumPayload(request.payload);
     const { id } = request.params;
@@ -58,6 +119,18 @@ class AlbumsHandler {
     };
   }
 
+  /**
+   * Handles DELETE request to remove an album.
+   *
+   * @param {Object} request - The Hapi request object
+   * @param {Object} request.params - Request parameters
+   * @param {string} request.params.id - The ID of the album to delete
+   *
+   * @throws {NotFoundError} When the specified album is not found
+   * @returns {Object} Response object with:
+   *                   - status: 'success'
+   *                   - message: Success message
+   */
   async deleteAlbumByIdHandler(request) {
     const { id } = request.params;
     await this._service.deleteAlbumById(id);

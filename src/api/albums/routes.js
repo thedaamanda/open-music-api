@@ -1,3 +1,9 @@
+/**
+ * Defines all album-related routes for the API.
+ *
+ * @param {Object} handler - An instance of AlbumsHandler containing all the route handlers
+ * @returns {Array<Object>} Array of route configuration objects
+ */
 const albumRoutes = (handler) => [
   {
     method: 'POST',
