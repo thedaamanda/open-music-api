@@ -1,13 +1,19 @@
-require('dotenv').config();
-
+const dotenv = require('dotenv');
 const Hapi = require('@hapi/hapi');
-const notes = require('./api/notes');
-const NotesService = require('./services/postgres/NotesService');
-const NotesValidator = require('./validator/notes');
+const albums = require('./api/albums');
+const songs = require('./api/songs');
+const AlbumsService = require('./services/postgres/AlbumsService');
+const SongsService = require('./services/postgres/SongsService');
+const AlbumsValidator = require('./validator/albums');
+const SongsValidator = require('./validator/songs');
 const ClientError = require('./exceptions/ClientError');
 
+dotenv.config();
+
 const init = async () => {
-  const notesService = new NotesService();
+  const albumsService = new AlbumsService();
+  const songsService = new SongsService();
+
   const server = Hapi.server({
     port: process.env.PORT,
     host: process.env.HOST,
@@ -18,23 +24,49 @@ const init = async () => {
     },
   });
 
-  await server.register({
-    plugin: notes,
-    options: {
-      service: notesService,
-      validator: NotesValidator,
+  await server.register([
+    {
+      plugin: albums,
+      options: {
+        service: albumsService,
+        validator: AlbumsValidator,
+      },
     },
-  });
+    {
+      plugin: songs,
+      options: {
+        service: songsService,
+        validator: SongsValidator,
+      },
+    },
+  ]);
 
   server.ext('onPreResponse', (request, h) => {
     const { response } = request;
 
-    if (response instanceof ClientError) {
+    if (response instanceof Error) {
+      if (response instanceof ClientError) {
+        const newResponse = h.response({
+          status: 'fail',
+          message: response.message,
+        });
+
+        newResponse.code(response.statusCode);
+
+        return newResponse;
+      }
+
+      if (!response.isServer) {
+        return h.continue;
+      }
+
       const newResponse = h.response({
         status: 'fail',
-        message: response.message,
+        message:
+          'The server has encountered a situation it does not know how to handle.',
       });
-      newResponse.code(response.statusCode);
+
+      newResponse.code(500);
       return newResponse;
     }
 

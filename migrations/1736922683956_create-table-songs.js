@@ -1,9 +1,4 @@
 /**
- * @type {import('node-pg-migrate').ColumnDefinitions | undefined}
- */
-exports.shorthands = undefined;
-
-/**
  * @param pgm {import('node-pg-migrate').MigrationBuilder}
  * @param run {() => void | undefined}
  * @returns {Promise<void> | void}
@@ -15,21 +10,40 @@ exports.up = (pgm) => {
       primaryKey: true,
     },
     title: {
-      type: 'TEXT',
+      type: 'VARCHAR(255)',
       notNull: true,
+    },
+    year: {
+      type: 'INT',
+      notNull: true,
+    },
+    genre: {
+      type: 'VARCHAR(50)',
+      notNull: true,
+    },
+    performer: {
+      type: 'VARCHAR(100)',
+      notNull: true,
+    },
+    duration: {
+      type: 'INT',
+      notNull: false,
     },
     album_id: {
       type: 'VARCHAR(50)',
-      notNull: true,
+      allowNull: true,
       references: 'albums',
+      onDelete: 'CASCADE',
     },
     created_at: {
-      type: 'TEXT',
-      notNull: true,
+      type: 'timestamp',
+      notNull: false,
+      default: pgm.func('current_timestamp'),
     },
     updated_at: {
-      type: 'TEXT',
-      notNull: true,
+      type: 'timestamp',
+      notNull: false,
+      default: pgm.func('current_timestamp'),
     },
   });
 };
