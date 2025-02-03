@@ -82,6 +82,28 @@ class SongsService {
   }
 
   /**
+   * Retrieves all songs that belong to a specific album.
+   *
+   * @param {string} albumId - The unique identifier of the album
+   *
+   * @returns {Promise<Array<object>>} Array of songs that belong to the album
+   *                                  each containing id, title, and performer
+   *
+   * @throws {NotFoundError} When no album is found with the given ID
+   * @returns {Promise<Array<object>>} Array of songs that belong to the album
+   *                                 each containing id, title, and performer
+   */
+  async getSongsByAlbumId(albumId) {
+    const query = {
+      text: 'SELECT * FROM songs WHERE album_id = $1',
+      values: [albumId],
+    };
+
+    const result = await this._pool.query(query);
+    return result.rows.map(mapDBToSongModel);
+  }
+
+  /**
    * Retrieves a single song by its ID.
    *
    * @param {string} id - The unique identifier of the song
@@ -154,6 +176,23 @@ class SongsService {
     if (!result.rows.length) {
       throw new NotFoundError('Gagal dihapus. Id tidak ditemukan');
     }
+  }
+
+  /**
+   * Verifies whether a song exists in the database.
+   *
+   * @param {string} id - The unique identifier of the song
+   *
+   * @returns {Promise<boolean>} True if the song exists, otherwise false
+   */
+  async verifySongExists(id) {
+    const query = {
+      text: 'SELECT id FROM songs WHERE id = $1',
+      values: [id],
+    };
+
+    const result = await this._pool.query(query);
+    return result.rows.length > 0;
   }
 }
 

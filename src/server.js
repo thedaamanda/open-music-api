@@ -18,6 +18,14 @@ const authentications = require('./api/authentications');
 const AuthenticationsService = require('./services/postgres/AuthenticationsService');
 const AuthenticationsValidator = require('./validator/authentications');
 
+const collaborations = require('./api/collaborations');
+const CollaborationsService = require('./services/postgres/CollaborationsService');
+const CollaborationsValidator = require('./validator/collaborations');
+
+const playlists = require('./api/playlists');
+const PlaylistsService = require('./services/postgres/PlaylistsService');
+const PlaylistsValidator = require('./validator/playlists');
+
 const ClientError = require('./exceptions/ClientError');
 const TokenManager = require('./tokenize/TokenManager');
 
@@ -26,8 +34,12 @@ dotenv.config();
 const init = async () => {
   const usersService = new UsersService();
   const authenticationsService = new AuthenticationsService();
-  const albumsService = new AlbumsService();
+  const collaborationsService = new CollaborationsService(usersService);
+
   const songsService = new SongsService();
+  const albumsService = new AlbumsService();
+
+  const playlistsService = new PlaylistsService(collaborationsService);
 
   const server = Hapi.server({
     port: process.env.PORT,
@@ -45,7 +57,7 @@ const init = async () => {
     }
   ]);
 
-  server.auth.strategy('notesapp_jwt', 'jwt', {
+  server.auth.strategy('openmusic-app_jwt', 'jwt', {
     keys: process.env.ACCESS_TOKEN_KEY,
     verify: {
       aud: false,
@@ -79,6 +91,14 @@ const init = async () => {
       },
     },
     {
+      plugin: collaborations,
+      options: {
+        collaborationsService,
+        playlistsService,
+        validator: CollaborationsValidator,
+      },
+    },
+    {
       plugin: albums,
       options: {
         service: albumsService,
@@ -92,6 +112,14 @@ const init = async () => {
         validator: SongsValidator,
       },
     },
+    // {
+    //   plugin: playlists,
+    //   options: {
+    //     playlistsService,
+    //     collaborationsService,
+    //     validator: PlaylistsValidator,
+    //   },
+    // },
   ]);
 
   server.ext('onPreResponse', (request, h) => {
