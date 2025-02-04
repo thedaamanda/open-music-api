@@ -24,7 +24,7 @@ class PlaylistsService {
       throw new InvariantError('Playlist gagal ditambahkan');
     }
 
-    await this._collaborationsService.addCollaboration(id, owner);
+    await this._collaborationsService.addCollaboration({ playlistId: id, userId: owner });
 
     return result.rows[0].id;
   }
