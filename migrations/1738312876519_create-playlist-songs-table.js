@@ -30,4 +30,9 @@ exports.up = (pgm) => {
  * @param run {() => void | undefined}
  * @returns {Promise<void> | void}
  */
-exports.down = (pgm) => {};
+exports.down = (pgm) => {
+  pgm.dropTable('playlist_songs');
+  pgm.dropConstraint('playlist_songs', 'unique_playlist_id_and_song_id');
+  pgm.dropConstraint('playlist_songs', 'fk_playlist_songs.playlist_id_playlists.id');
+  pgm.dropConstraint('playlist_songs', 'fk_playlist_songs.song_id_songs.id');
+};
