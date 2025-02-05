@@ -16,11 +16,14 @@ class CollaborationsHandler {
     const { playlistId, userId } = request.payload;
 
     await this._playlistsService.verifyPlaylistOwner(playlistId, credentialId);
-    await this._collaborationsService.addCollaboration({ playlistId, userId });
+    const collaborationId = await this._collaborationsService.addCollaboration({ playlistId, userId });
 
     return h.response({
       status: 'success',
       message: 'Kolaborasi berhasil ditambahkan',
+      data: {
+        collaborationId,
+      },
     }).code(201);
   }
 

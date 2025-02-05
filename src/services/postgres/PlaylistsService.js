@@ -94,10 +94,8 @@ class PlaylistsService {
       await this.verifyPlaylistOwner(id, userId);
     } catch (error) {
       if (error instanceof NotFoundError) {
-        throw new NotFoundError('Playlist tidak ditemukan');
+        throw error;
       }
-
-      throw error;
     }
 
     await this._collaborationsService.verifyCollaborator({ playlistId: id, userId });

@@ -148,9 +148,8 @@ const init = async () => {
 
       const newResponse = h.response({
         status: 'fail',
-        // message:
-        //   'The server has encountered a situation it does not know how to handle.',
-        message: response.message,
+        message:
+          'The server has encountered a situation it does not know how to handle.',
       });
 
       newResponse.code(500);

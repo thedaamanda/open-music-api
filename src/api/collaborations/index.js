@@ -9,11 +9,11 @@ module.exports = {
     playlistsService,
     validator,
   }) => {
-    const collaborationsHandler = new CollaborationsHandler(
+    const collaborationsHandler = new CollaborationsHandler({
       collaborationsService,
       playlistsService,
       validator,
-    );
+    });
     server.route(collaborationsRoutes(collaborationsHandler));
   },
 };
