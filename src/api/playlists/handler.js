@@ -47,7 +47,7 @@ class PlaylistsHandler {
     const { playlistId } = request.params;
 
     await this._playlistsService.verifyPlaylistOwner(playlistId, credentialId);
-    await this._playlistsService.deletePlaylist(playlistId);
+    await this._playlistsService.deletePlaylistById(playlistId);
 
     return {
       status: 'success',
@@ -79,17 +79,19 @@ class PlaylistsHandler {
     const { playlistId } = request.params;
 
     await this._playlistsService.verifyPlaylistAccess(playlistId, credentialId);
-    const songs = await this._playlistSongsService.getSongsFromPlaylist(playlistId);
+    const playlist = await this._playlistsService.getPlaylistById(playlistId);
+    playlist.songs = await this._playlistSongsService.getSongsFromPlaylist(playlistId);
+
     return {
       status: 'success',
       data: {
-        songs,
+        playlist,
       },
     };
   }
 
   async deleteSongFromPlaylist(request) {
-    this._validator.validatePlaylistSongPayload(request.payload
+    this._validator.validatePlaylistSongActivityPayload(request.payload);
 
     const { id: credentialId } = request.auth.credentials;
     const { playlistId } = request.params;
@@ -97,10 +99,25 @@ class PlaylistsHandler {
 
     await this._playlistsService.verifyPlaylistAccess(playlistId, credentialId);
     await this._playlistSongsService.deleteSongFromPlaylist(playlistId, songId);
+    await this._playlistSongActivitiesService.deletePlaylistSongActivity({ playlistId, songId, userId: credentialId });
 
     return {
       status: 'success',
       message: 'Lagu berhasil dihapus dari playlist',
+    };
+  }
+
+  async getPlaylistSongActivitiesHandler(request) {
+    const { id: credentialId } = request.auth.credentials;
+    const { playlistId } = request.params;
+
+    await this._playlistsService.verifyPlaylistAccess(playlistId, credentialId);
+    const playlistSongActivities = await this._playlistSongActivitiesService.getPlaylistSongActivities(playlistId);
+    return {
+      status: 'success',
+      data: {
+        playlistSongActivities,
+      },
     };
   }
 }

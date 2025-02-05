@@ -10,7 +10,7 @@ class PlaylistSongsService {
   }
 
   async addSongToPlaylist(playlistId, songId) {
-    await this._songsService.verifySongId(songId);
+    await this._songsService.verifySongExists(songId);
 
     const id = `playlist-songs-${nanoid(16)}`;
 
@@ -41,7 +41,7 @@ class PlaylistSongsService {
   }
 
   async deleteSongFromPlaylist(playlistId, songId) {
-    await this.verifyPlaylistSongAccess(playlistId, songId);
+    await this._songsService.verifySongExists(songId);
 
     const query = {
       text: 'DELETE FROM playlist_songs WHERE playlist_id = $1 AND song_id = $2 RETURNING id',

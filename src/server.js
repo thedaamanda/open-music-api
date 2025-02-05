@@ -25,6 +25,7 @@ const CollaborationsValidator = require('./validator/collaborations');
 const playlists = require('./api/playlists');
 const PlaylistsService = require('./services/postgres/PlaylistsService');
 const PlaylistSongsService = require('./services/postgres/PlaylistSongsService');
+const PlaylistSongActivitiesService = require('./services/postgres/PlaylistSongActivitiesService');
 const PlaylistsValidator = require('./validator/playlists');
 
 const ClientError = require('./exceptions/ClientError');
@@ -42,6 +43,7 @@ const init = async () => {
 
   const playlistsService = new PlaylistsService(collaborationsService);
   const playlistSongsService = new PlaylistSongsService(songsService);
+  const playlistSongActivitiesService = new PlaylistSongActivitiesService();
 
   const server = Hapi.server({
     port: process.env.PORT,
@@ -119,6 +121,7 @@ const init = async () => {
       options: {
         playlistsService,
         playlistSongsService,
+        playlistSongActivitiesService,
         validator: PlaylistsValidator,
       },
     },
@@ -145,8 +148,9 @@ const init = async () => {
 
       const newResponse = h.response({
         status: 'fail',
-        message:
-          'The server has encountered a situation it does not know how to handle.',
+        // message:
+        //   'The server has encountered a situation it does not know how to handle.',
+        message: response.message,
       });
 
       newResponse.code(500);

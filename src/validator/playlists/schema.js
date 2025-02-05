@@ -8,4 +8,8 @@ const PlaylistSongsPayloadSchema = Joi.object({
   songId: Joi.string().required(),
 });
 
-module.exports = { PlaylistsPayloadSchema, PlaylistSongsPayloadSchema };
+const PlaylistSongActivitiesPayloadSchema = Joi.object({
+  songId: Joi.string().required(),
+});
+
+module.exports = { PlaylistsPayloadSchema, PlaylistSongsPayloadSchema, PlaylistSongActivitiesPayloadSchema };
