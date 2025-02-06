@@ -60,7 +60,7 @@ const playlistsRoutes = (handler) => [
     options: {
       auth: 'openmusic-app_jwt',
     },
-  }
+  },
 ];
 
 module.exports = playlistsRoutes;
