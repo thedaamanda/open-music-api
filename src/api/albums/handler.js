@@ -11,8 +11,9 @@ class AlbumsHandler {
    * @param {Object} service - The album service instance for handling business logic
    * @param {Object} validator - The validator instance for request payload validation
    */
-  constructor(service, validator) {
-    this._service = service;
+  constructor({ albumsService, storageService, validator }) {
+    this._albumsService = albumsService;
+    this._storageService = storageService;
     this._validator = validator;
 
     autoBind(this);
@@ -38,7 +39,7 @@ class AlbumsHandler {
     this._validator.validateAlbumPayload(request.payload);
     const { name, year } = request.payload;
 
-    const albumId = await this._service.addAlbum({ name, year });
+    const albumId = await this._albumsService.addAlbum({ name, year });
 
     const response = h.response({
       status: 'success',
@@ -59,7 +60,7 @@ class AlbumsHandler {
    *                   - data: Object containing array of albums
    */
   async getAlbumsHandler() {
-    const albums = await this._service.getAlbums();
+    const albums = await this._albumsService.getAlbums();
     return {
       status: 'success',
       data: {
@@ -82,7 +83,7 @@ class AlbumsHandler {
    */
   async getAlbumByIdHandler(request) {
     const { id } = request.params;
-    const album = await this._service.getAlbumById(id);
+    const album = await this._albumsService.getAlbumById(id);
     return {
       status: 'success',
       data: {
@@ -111,7 +112,7 @@ class AlbumsHandler {
     this._validator.validateAlbumPayload(request.payload);
     const { id } = request.params;
 
-    await this._service.editAlbumById(id, request.payload);
+    await this._albumsService.editAlbumById(id, request.payload);
 
     return {
       status: 'success',
@@ -133,11 +134,44 @@ class AlbumsHandler {
    */
   async deleteAlbumByIdHandler(request) {
     const { id } = request.params;
-    await this._service.deleteAlbumById(id);
+    await this._albumsService.deleteAlbumById(id);
     return {
       status: 'success',
       message: 'Album berhasil dihapus',
     };
+  }
+
+  /**
+   * Handles POST request to upload an album's cover image.
+   *
+   * @param {Object} request - The Hapi request object
+   * @param {Object} request.params - Request parameters
+   * @param {string} request.params.id - The ID of the album to upload the cover image for
+   * @param {Object} request.payload - The multipart form data payload
+   * @param {Object} request.payload.file - The file to upload
+   *
+   * @throws {ValidationError} When the request payload fails validation
+   * @throws {NotFoundError} When the specified album is not found
+   * @returns {Object} Response object with:
+   *                   - status: 'success'
+   *                   - message: Success message
+   */
+  async postAlbumCoverHandler(request, h) {
+    const { id } = request.params;
+    const { cover } = request.payload;
+
+    this._validator.validateImageHeaders(cover.hapi.headers);
+
+    const fileLocation = await this._storageService.writeFile(cover, cover.hapi);
+
+    await this._albumsService.addCoverUrlOnAlbumById(id, fileLocation);
+
+    const response = h.response({
+      status: 'success',
+      message: 'Sampul berhasil diunggah',
+    });
+    response.code(201);
+    return response;
   }
 }
 

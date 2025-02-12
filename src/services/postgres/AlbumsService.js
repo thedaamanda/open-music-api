@@ -41,6 +41,29 @@ class AlbumsService {
   }
 
   /**
+   * Adds a cover URL to an album by its ID.
+   * This method is used to update the cover URL of an album.
+   *
+   * @param {string} id - The unique identifier of the album
+   * @param {string} url - The URL of the album cover image
+   *
+   * @throws {NotFoundError} When no album is found with the given ID
+   * @returns {Promise<void>}
+   */
+  async addCoverUrlOnAlbumById(id, url) {
+    const query = {
+      text: 'UPDATE albums SET cover = $1 WHERE id = $2 RETURNING id',
+      values: [url, id],
+    };
+
+    const result = await this._pool.query(query);
+
+    if (!result.rows.length) {
+      throw new NotFoundError('Gagal menambahkan cover album. Id tidak ditemukan');
+    }
+  }
+
+  /**
    * Retrieves all albums from the database.
    *
    * @returns {Promise<Array<object>>} Array of all albums, mapped to the album model format
