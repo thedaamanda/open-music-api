@@ -28,6 +28,10 @@ const PlaylistSongsService = require('./services/postgres/PlaylistSongsService')
 const PlaylistSongActivitiesService = require('./services/postgres/PlaylistSongActivitiesService');
 const PlaylistsValidator = require('./validator/playlists');
 
+const _exports = require('./api/exports');
+const producerService = require('./services/rabbitmq/ProducerService');
+const ExportsValidator = require('./validator/exports');
+
 const ClientError = require('./exceptions/ClientError');
 const TokenManager = require('./tokenize/TokenManager');
 
@@ -125,6 +129,14 @@ const init = async () => {
         validator: PlaylistsValidator,
       },
     },
+    {
+      plugin: _exports,
+      options: {
+        producerService,
+        playlistsService,
+        validator: ExportsValidator,
+      },
+    },
   ]);
 
   server.ext('onPreResponse', (request, h) => {
@@ -148,8 +160,9 @@ const init = async () => {
 
       const newResponse = h.response({
         status: 'fail',
-        message:
-          'The server has encountered a situation it does not know how to handle.',
+        // message:
+        //   'The server has encountered a situation it does not know how to handle.',
+        message: response.message,
       });
 
       newResponse.code(500);
