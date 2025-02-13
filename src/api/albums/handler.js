@@ -11,9 +11,10 @@ class AlbumsHandler {
    * @param {Object} service - The album service instance for handling business logic
    * @param {Object} validator - The validator instance for request payload validation
    */
-  constructor({ albumsService, storageService, validator }) {
+  constructor({ albumsService, storageService, albumLikesService, validator }) {
     this._albumsService = albumsService;
     this._storageService = storageService;
+    this._albumLikesService = albumLikesService;
     this._validator = validator;
 
     autoBind(this);
@@ -172,6 +173,84 @@ class AlbumsHandler {
     });
     response.code(201);
     return response;
+  }
+
+  /**
+   * Handles POST request to like an album.
+   *
+   * @param {Object} request - The Hapi request object
+   * @param {Object} request.auth.credentials - Authenticated user's credentials
+   * @param {string} request.auth.credentials.id - The ID of the authenticated user
+   * @param {Object} request.params - Request parameters
+   * @param {string} request.params.id - The ID of the album to like
+   *
+   * @throws {NotFoundError} When the specified album is not found
+   * @returns {Object} Response object with:
+   *                   - status: 'success'
+   *                   - message: Success message
+   */
+  async postLikeAlbumHandler(request, h) {
+    const { id } = request.params;
+    const { id: userId } = request.auth.credentials;
+
+    await this._albumsService.getAlbumById(id);
+    await this._albumLikesService.addLikeAlbum(userId, id);
+
+    const response = h.response({
+      status: 'success',
+      message: 'Album berhasil dilike',
+    });
+    response.code(201);
+    return response;
+  }
+
+  /**
+   * Handles GET request to retrieve the number of likes for an album.
+   *
+   * @param {Object} request - The Hapi request object
+   * @param {Object} request.params - Request parameters
+   * @param {string} request.params.id - The ID of the album to retrieve the number of likes for
+   *
+   * @returns {Object} Response object with:
+   *                  - status: 'success'
+   *                  - data: Object containing the number of likes for the album
+   */
+  async getLikedAlbumsHandler(request) {
+    const { id } = request.params;
+    const likes = await this._albumLikesService.albumLikesCount(id);
+
+    return {
+      status: 'success',
+      data: {
+        likes,
+      },
+    };
+  }
+
+  /**
+   * Handles DELETE request to unlike an album.
+   *
+   * @param {Object} request - The Hapi request object
+   * @param {Object} request.auth.credentials - Authenticated user's credentials
+   * @param {string} request.auth.credentials.id - The ID of the authenticated user
+   * @param {Object} request.params - Request parameters
+   * @param {string} request.params.id - The ID of the album to unlike
+   *
+   * @throws {NotFoundError} When the specified album is not found
+   * @returns {Object} Response object with:
+   *                   - status: 'success'
+   *                   - message: Success message
+   */
+  async deleteLikeAlbumHandler(request) {
+    const { id } = request.params;
+    const { id: userId } = request.auth.credentials;
+
+    await this._albumLikesService.deleteLikeAlbum(userId, id);
+
+    return {
+      status: 'success',
+      message: 'Album berhasil diunlike',
+    };
   }
 }
 

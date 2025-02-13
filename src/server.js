@@ -6,6 +6,7 @@ const path = require('path');
 const albums = require('./api/albums');
 const AlbumsService = require('./services/postgres/AlbumsService');
 const StorageService = require('./services/storage/StorageService');
+const AlbumLikesService = require('./services/postgres/AlbumLikesService');
 const AlbumsValidator = require('./validator/albums');
 
 const songs = require('./api/songs');
@@ -47,6 +48,7 @@ const init = async () => {
   const songsService = new SongsService();
   const albumsService = new AlbumsService();
   const storageService = new StorageService(path.resolve(__dirname, 'api/albums/fs/covers'));
+  const albumLikesService = new AlbumLikesService();
 
   const playlistsService = new PlaylistsService(collaborationsService);
   const playlistSongsService = new PlaylistSongsService(songsService);
@@ -114,6 +116,7 @@ const init = async () => {
       options: {
         albumsService,
         storageService,
+        albumLikesService,
         validator: AlbumsValidator,
       },
     },
