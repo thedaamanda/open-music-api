@@ -1,3 +1,5 @@
+const path = require('path');
+
 /**
  * Defines all album-related routes for the API.
  *
@@ -43,6 +45,15 @@ const albumRoutes = (handler) => [
       },
     },
   },
+  // {
+  //   method: 'GET',
+  //   path: 'albums/{param*}',
+  //   handler: {
+  //     directory: {
+  //       path: path.resolve(__dirname, 'fs'),
+  //     },
+  //   },
+  // },
   {
     method: 'POST',
     path: '/albums/{id}/likes',
