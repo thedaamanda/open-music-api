@@ -35,12 +35,14 @@ const _exports = require('./api/exports');
 const producerService = require('./services/rabbitmq/ProducerService');
 const ExportsValidator = require('./validator/exports');
 
+const CacheService = require('./services/redis/CacheService');
 const ClientError = require('./exceptions/ClientError');
 const TokenManager = require('./tokenize/TokenManager');
 
 dotenv.config();
 
 const init = async () => {
+  const cacheService = new CacheService();
   const usersService = new UsersService();
   const authenticationsService = new AuthenticationsService();
   const collaborationsService = new CollaborationsService(usersService);
@@ -117,6 +119,7 @@ const init = async () => {
         albumsService,
         storageService,
         albumLikesService,
+        cacheService,
         validator: AlbumsValidator,
       },
     },

@@ -8,13 +8,17 @@ class AlbumsHandler {
   /**
    * Initializes a new instance of AlbumsHandler.
    *
-   * @param {Object} service - The album service instance for handling business logic
+   * @param {Object} albumsService - The albums service instance
+   * @param {Object} storageService - The storage service instance
+   * @param {Object} albumLikesService - The album likes service instance
+   * @param {Object} cacheService - The cache service instance
    * @param {Object} validator - The validator instance for request payload validation
    */
-  constructor({ albumsService, storageService, albumLikesService, validator }) {
+  constructor({ albumsService, storageService, albumLikesService, cacheService, validator }) {
     this._albumsService = albumsService;
     this._storageService = storageService;
     this._albumLikesService = albumLikesService;
+    this._cacheService = cacheService;
     this._validator = validator;
 
     autoBind(this);
@@ -196,6 +200,8 @@ class AlbumsHandler {
     await this._albumsService.getAlbumById(id);
     await this._albumLikesService.addLikeAlbum(userId, id);
 
+    await this._cacheService.delete(`likes:${id}`);
+
     const response = h.response({
       status: 'success',
       message: 'Album berhasil dilike',
@@ -215,16 +221,31 @@ class AlbumsHandler {
    *                  - status: 'success'
    *                  - data: Object containing the number of likes for the album
    */
-  async getLikedAlbumsHandler(request) {
+  async getLikedAlbumsHandler(request, h) {
     const { id } = request.params;
-    const likes = await this._albumLikesService.albumLikesCount(id);
 
-    return {
-      status: 'success',
-      data: {
-        likes,
-      },
-    };
+    try {
+      const likes = JSON.parse(await this._cacheService.get(`likes:${id}`));
+      const response = h.response({
+        status: 'success',
+        data: {
+          likes,
+        },
+      });
+      response.header('X-Data-Source', 'cache');
+      return response;
+    } catch (error) {
+      const likes = await this._albumLikesService.albumLikesCount(id);
+      await this._cacheService.set(`likes:${id}`, JSON.stringify(likes), 60 * 30);
+
+      return {
+        status: 'success',
+        data: {
+          likes,
+        },
+      };
+    }
+
   }
 
   /**
@@ -246,6 +267,7 @@ class AlbumsHandler {
     const { id: userId } = request.auth.credentials;
 
     await this._albumLikesService.deleteLikeAlbum(userId, id);
+    await this._cacheService.delete(`likes:${id}`);
 
     return {
       status: 'success',
