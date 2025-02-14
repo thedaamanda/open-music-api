@@ -1,4 +1,5 @@
 const autoBind = require('auto-bind');
+const config = require('../../utils/config');
 
 /**
  * Handler class to manage HTTP requests related to albums.
@@ -168,8 +169,9 @@ class AlbumsHandler {
     this._validator.validateImageHeaders(cover.hapi.headers);
 
     const fileLocation = await this._storageService.writeFile(cover, cover.hapi);
+    const newCoverUrl = `http://${config.server.host}:${config.server.port}/albums/covers/${fileLocation}`;
 
-    await this._albumsService.addCoverUrlOnAlbumById(id, fileLocation);
+    await this._albumsService.addCoverUrlOnAlbumById(id, newCoverUrl);
 
     const response = h.response({
       status: 'success',
