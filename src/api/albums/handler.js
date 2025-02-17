@@ -15,7 +15,9 @@ class AlbumsHandler {
    * @param {Object} cacheService - The cache service instance
    * @param {Object} validator - The validator instance for request payload validation
    */
-  constructor({ albumsService, storageService, albumLikesService, cacheService, validator }) {
+  constructor({
+    albumsService, storageService, albumLikesService, cacheService, validator,
+  }) {
     this._albumsService = albumsService;
     this._storageService = storageService;
     this._albumLikesService = albumLikesService;
@@ -247,7 +249,6 @@ class AlbumsHandler {
         },
       };
     }
-
   }
 
   /**
