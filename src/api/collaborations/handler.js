@@ -13,9 +13,12 @@ class CollaborationsHandler {
    * @param {Object} dependencies.playlistsService - The service handling playlist logic
    * @param {Object} dependencies.validator - The validator instance for request payload validation
    */
-  constructor({ collaborationsService, playlistsService, validator }) {
+  constructor({
+    collaborationsService, playlistsService, cacheService, validator,
+  }) {
     this._collaborationsService = collaborationsService;
     this._playlistsService = playlistsService;
+    this._cacheService = cacheService;
     this._validator = validator;
 
     autoBind(this);
@@ -52,6 +55,9 @@ class CollaborationsHandler {
       playlistId,
       userId,
     });
+
+    await this._cacheService.delete(`playlists:${credentialId}`);
+    await this._cacheService.delete(`playlists:${userId}`);
 
     return h.response({
       status: 'success',
@@ -90,6 +96,9 @@ class CollaborationsHandler {
 
     await this._playlistsService.verifyPlaylistOwner(playlistId, credentialId);
     await this._collaborationsService.deleteCollaboration({ playlistId, userId });
+
+    await this._cacheService.delete(`playlists:${credentialId}`);
+    await this._cacheService.delete(`playlists:${userId}`);
 
     return {
       status: 'success',

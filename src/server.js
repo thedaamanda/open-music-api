@@ -110,14 +110,6 @@ const init = async () => {
       },
     },
     {
-      plugin: collaborations,
-      options: {
-        collaborationsService,
-        playlistsService,
-        validator: CollaborationsValidator,
-      },
-    },
-    {
       plugin: albums,
       options: {
         albumsService,
@@ -140,7 +132,17 @@ const init = async () => {
         playlistsService,
         playlistSongsService,
         playlistSongActivitiesService,
+        cacheService,
         validator: PlaylistsValidator,
+      },
+    },
+    {
+      plugin: collaborations,
+      options: {
+        collaborationsService,
+        playlistsService,
+        cacheService,
+        validator: CollaborationsValidator,
       },
     },
     {
