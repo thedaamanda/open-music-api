@@ -20,11 +20,13 @@ class PlaylistsHandler {
     playlistsService,
     playlistSongsService,
     playlistSongActivitiesService,
+    cacheService,
     validator,
   }) {
     this._playlistsService = playlistsService;
     this._playlistSongsService = playlistSongsService;
     this._playlistSongActivitiesService = playlistSongActivitiesService;
+    this._cacheService = cacheService;
     this._validator = validator;
 
     autoBind(this);
@@ -78,15 +80,33 @@ class PlaylistsHandler {
    *                   - status: 'success'
    *                   - data: Object containing an array of playlists
    */
-  async getPlaylistsHandler(request) {
+  async getPlaylistsHandler(request, h) {
     const { id: credentialId } = request.auth.credentials;
-    const playlists = await this._playlistsService.getPlaylists(credentialId);
-    return {
-      status: 'success',
-      data: {
-        playlists,
-      },
-    };
+
+    try {
+      const playlists = JSON.parse(await this._cacheService.get(`playlists:${credentialId}`));
+      const playlists1 = await this._playlistsService.getPlaylists(credentialId);
+      console.log(playlists);
+      console.log(playlists1);
+      const response = h.response({
+        status: 'success',
+        data: {
+          playlists,
+        },
+      });
+      response.header('X-Data-Source', 'cache');
+      return response;
+    } catch (error) {
+      const playlists = await this._playlistsService.getPlaylists(credentialId);
+      await this._cacheService.set(`playlists:${credentialId}`, JSON.stringify(playlists), 60 * 30);
+
+      return {
+        status: 'success',
+        data: {
+          playlists,
+        },
+      };
+    }
   }
 
   /**
@@ -108,6 +128,10 @@ class PlaylistsHandler {
 
     await this._playlistsService.verifyPlaylistOwner(playlistId, credentialId);
     await this._playlistsService.deletePlaylistById(playlistId);
+
+    await this._cacheService.delete(`playlists:${credentialId}`);
+    await this._cacheService.delete(`activities:${playlistId}`);
+    await this._cacheService.delete(`songs:${playlistId}`);
 
     return {
       status: 'success',
@@ -147,6 +171,9 @@ class PlaylistsHandler {
       userId: credentialId,
     });
 
+    await this._cacheService.delete(`activities:${playlistId}`);
+    await this._cacheService.delete(`songs:${playlistId}`);
+
     const response = h.response({
       status: 'success',
       message: 'Lagu berhasil ditambahkan ke playlist',
@@ -167,22 +194,38 @@ class PlaylistsHandler {
    *                   - status: 'success'
    *                   - data: Object containing the playlist and its songs
    */
-  async getSongsFromPlaylist(request) {
+  async getSongsFromPlaylist(request, h) {
     const { id: credentialId } = request.auth.credentials;
     const { playlistId } = request.params;
 
     await this._playlistsService.verifyPlaylistAccess(playlistId, credentialId);
     const playlist = await this._playlistsService.getPlaylistById(playlistId);
-    playlist.songs = await this._playlistSongsService.getSongsFromPlaylist(
-      playlistId,
-    );
 
-    return {
-      status: 'success',
-      data: {
-        playlist,
-      },
-    };
+    try {
+      playlist.songs = JSON.parse(await this._cacheService.get(`songs:${playlistId}`));
+
+      const response = h.response({
+        status: 'success',
+        data: {
+          playlist,
+        },
+      });
+      response.header('X-Data-Source', 'cache');
+      return response;
+    } catch (error) {
+      playlist.songs = await this._playlistSongsService.getSongsFromPlaylist(
+        playlistId,
+      );
+
+      await this._cacheService.set(`songs:${playlistId}`, JSON.stringify(playlist.songs), 60 * 30);
+
+      return {
+        status: 'success',
+        data: {
+          playlist,
+        },
+      };
+    }
   }
 
   /**
@@ -215,6 +258,9 @@ class PlaylistsHandler {
       userId: credentialId,
     });
 
+    await this._cacheService.delete(`activities:${playlistId}`);
+    await this._cacheService.delete(`songs:${playlistId}`);
+
     return {
       status: 'success',
       message: 'Lagu berhasil dihapus dari playlist',
@@ -233,22 +279,39 @@ class PlaylistsHandler {
    *                   - status: 'success'
    *                   - data: Object containing playlist ID and activities
    */
-  async getPlaylistSongActivitiesHandler(request) {
+  async getPlaylistSongActivitiesHandler(request, h) {
     const { id: credentialId } = request.auth.credentials;
     const { playlistId } = request.params;
 
-    await this._playlistsService.verifyPlaylistAccess(playlistId, credentialId);
-    const activities = await this._playlistSongActivitiesService.getPlaylistSongActivities(
-      playlistId,
-    );
+    try {
+      const activities = JSON.parse(await this._cacheService.get(`activities:${playlistId}`));
 
-    return {
-      status: 'success',
-      data: {
+      const response = h.response({
+        status: 'success',
+        data: {
+          playlistId,
+          activities,
+        },
+      });
+      response.header('X-Data-Source', 'cache');
+      return response;
+    } catch (error) {
+      await this._playlistsService.verifyPlaylistAccess(playlistId, credentialId);
+
+      const activities = await this._playlistSongActivitiesService.getPlaylistSongActivities(
         playlistId,
-        activities,
-      },
-    };
+      );
+
+      await this._cacheService.set(`activities:${playlistId}`, JSON.stringify(activities), 60 * 30);
+
+      return {
+        status: 'success',
+        data: {
+          playlistId,
+          activities,
+        },
+      };
+    }
   }
 }
 

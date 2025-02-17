@@ -1,9 +1,15 @@
-const dotenv = require('dotenv');
+require('dotenv').config();
+
 const Hapi = require('@hapi/hapi');
 const Jwt = require('@hapi/jwt');
+const Inert = require('@hapi/inert');
+const path = require('path');
+const config = require('./utils/config');
 
 const albums = require('./api/albums');
 const AlbumsService = require('./services/postgres/AlbumsService');
+const StorageService = require('./services/storage/StorageService');
+const AlbumLikesService = require('./services/postgres/AlbumLikesService');
 const AlbumsValidator = require('./validator/albums');
 
 const songs = require('./api/songs');
@@ -28,26 +34,32 @@ const PlaylistSongsService = require('./services/postgres/PlaylistSongsService')
 const PlaylistSongActivitiesService = require('./services/postgres/PlaylistSongActivitiesService');
 const PlaylistsValidator = require('./validator/playlists');
 
+const _exports = require('./api/exports');
+const producerService = require('./services/rabbitmq/ProducerService');
+const ExportsValidator = require('./validator/exports');
+
+const CacheService = require('./services/redis/CacheService');
 const ClientError = require('./exceptions/ClientError');
 const TokenManager = require('./tokenize/TokenManager');
 
-dotenv.config();
-
 const init = async () => {
+  const cacheService = new CacheService();
   const usersService = new UsersService();
   const authenticationsService = new AuthenticationsService();
   const collaborationsService = new CollaborationsService(usersService);
 
   const songsService = new SongsService();
   const albumsService = new AlbumsService();
+  const storageService = new StorageService(path.resolve(__dirname, 'api/albums/fs/covers'));
+  const albumLikesService = new AlbumLikesService();
 
   const playlistsService = new PlaylistsService(collaborationsService);
   const playlistSongsService = new PlaylistSongsService(songsService);
   const playlistSongActivitiesService = new PlaylistSongActivitiesService();
 
   const server = Hapi.server({
-    port: process.env.PORT,
-    host: process.env.HOST,
+    port: config.server.port,
+    host: config.server.host,
     routes: {
       cors: {
         origin: ['*'],
@@ -59,15 +71,18 @@ const init = async () => {
     {
       plugin: Jwt,
     },
+    {
+      plugin: Inert,
+    },
   ]);
 
   server.auth.strategy('openmusic-app_jwt', 'jwt', {
-    keys: process.env.ACCESS_TOKEN_KEY,
+    keys: config.jwt.accessKey,
     verify: {
       aud: false,
       iss: false,
       sub: false,
-      maxAgeSec: process.env.ACCESS_TOKEN_AGE,
+      maxAgeSec: config.jwt.accessTokenAge,
     },
     validate: (artifacts) => ({
       isValid: true,
@@ -95,17 +110,12 @@ const init = async () => {
       },
     },
     {
-      plugin: collaborations,
-      options: {
-        collaborationsService,
-        playlistsService,
-        validator: CollaborationsValidator,
-      },
-    },
-    {
       plugin: albums,
       options: {
-        service: albumsService,
+        albumsService,
+        storageService,
+        albumLikesService,
+        cacheService,
         validator: AlbumsValidator,
       },
     },
@@ -122,7 +132,25 @@ const init = async () => {
         playlistsService,
         playlistSongsService,
         playlistSongActivitiesService,
+        cacheService,
         validator: PlaylistsValidator,
+      },
+    },
+    {
+      plugin: collaborations,
+      options: {
+        collaborationsService,
+        playlistsService,
+        cacheService,
+        validator: CollaborationsValidator,
+      },
+    },
+    {
+      plugin: _exports,
+      options: {
+        producerService,
+        playlistsService,
+        validator: ExportsValidator,
       },
     },
   ]);
@@ -148,8 +176,9 @@ const init = async () => {
 
       const newResponse = h.response({
         status: 'fail',
-        message:
-          'The server has encountered a situation it does not know how to handle.',
+        // message:
+        //   'The server has encountered a situation it does not know how to handle.',
+        message: response.message,
       });
 
       newResponse.code(500);

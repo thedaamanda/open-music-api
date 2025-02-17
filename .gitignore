@@ -29,3 +29,4 @@ coverage/
 
 # etc
 .DS_Store
+src/api/albums/fs/*
